@@ -2,9 +2,8 @@
 /*                                                                            */
 /*    Module:       main.cpp                                                  */
 /*    Author:       jokin                                                     */
-/*    Created:      9/26/2023, 6:42:56 PM                                     */
-/*    Description:  V5 project                                                */
-/*                                                                            */
+/*    Created:      1/25/2024, 6:54:56 PM                                     */
+/*    Description:  V5 project                                                */                                      
 /*----------------------------------------------------------------------------*/
 
 #include "math.h"
@@ -19,22 +18,25 @@ competition Competition;
 controller Con;
 brain Brn;
 
-motor frontLeftDrive = motor(PORT11, ratio6_1);
-motor middleLeftDrive = motor(PORT12, ratio6_1);
-motor backLeftDrive = motor(PORT13, ratio6_1);
-motor frontRightDrive = motor(PORT14, ratio6_1);
-motor middleRightDrive = motor(PORT15, ratio6_1);
-motor backRightDrive = motor(PORT16, ratio6_1);
-motor intake = motor(PORT1, ratio6_1);
-motor launcher = motor(PORT2, ratio36_1);
-
-digital_out leftWing = digital_out(Brn.ThreeWirePort.A);
-digital_out rightWing = digital_out(Brn.ThreeWirePort.B);
+motor frontLeftDrive = motor(PORT11, ratio18_1);
+motor middleLeftDrive = motor(PORT2, ratio18_1);
+motor backLeftDrive = motor(PORT12, ratio18_1);
+motor frontRightDrive = motor(PORT13, ratio18_1);
+motor middleRightDrive = motor(PORT15, ratio18_1);
+motor backRightDrive = motor(PORT14, ratio18_1);
+motor lowerSpinnyThing = motor(PORT3, ratio6_1);
+motor upperspinnyThing = motor(PORT4, ratio6_1);
+motor claw = motor(PORT20, ratio18_1);
+motor leftWing = motor(PORT1, ratio18_1);
+motor rightWing = motor(PORT10, ratio18_1);
+motor intake = motor(PORT17, ratio6_1);
 
 // ALLIANCES: 0 = BlUE 1 = RED
-bool fast = true, skills = false, leftDown = false, rightDown = false, R2pressingons = false, invert = false, leftOut = false, rightOut = false, launching = false;
-std::string screen = "main", auton = "red1";
-int p1dist = 0, p1vel = 75, x;
+bool fast = true, skills = false, leftDown = false, rightDown = false, R2pressingons = false;;
+double leftDriveVel = 0, rightDriveVel = 0, alliance = 0;
+std::string screen = "main", auton = "red2";
+int p1dist = 0, p1vel = 75, x, clawvelABS = claw.velocity(percent);
+
 void drawRectangle(int x, int y, int w, int h, std::string autonSelected) {
     // Draw the square
     Brn.Screen.drawRectangle(x, y, w, h);
@@ -61,6 +63,7 @@ void drawButton(int x, int y, int w, int h, std::string t, std::string destinati
     Brn.Screen.setCursor(1, 1);
     Brn.Screen.printAt(textX, textY, false, t.c_str());
 
+    // Check if button is pressed
     if (Brn.Screen.pressing()) {
         int touchX = Brn.Screen.xPosition();
         int touchY = Brn.Screen.yPosition();
@@ -120,10 +123,6 @@ void UI() {
       Brn.Screen.print("intake: ");
       Brn.Screen.print(intake.temperature(celsius));
       Brn.Screen.print("°");
-      Brn.Screen.setCursor(10,1);
-      Brn.Screen.print("launcher: ");
-      Brn.Screen.print(launcher.temperature(celsius));
-      Brn.Screen.print("°");
     }
     else if(screen == "auton"){
       Brn.Screen.setPenWidth(1);
@@ -141,7 +140,7 @@ void UI() {
       Brn.Screen.setFillColor(red);
       drawRectangle(119, 22, 75, 50, "red1");
 
-            if(auton == "blue1"){
+      if(auton == "blue1"){
       Brn.Screen.setPenWidth(4);
       }
       else{
@@ -202,13 +201,13 @@ void driveForward(int distance, int velocity, int timeout) {
 
   setTimeouts(timeout);
 
-  frontLeftDrive.spinFor(reverse, distance, degrees, false);
-  middleLeftDrive.spinFor(reverse, distance, degrees, false);
-  backLeftDrive.spinFor(reverse, distance, degrees, false);
+  frontLeftDrive.spinFor(forward, distance, degrees, false);
+  middleLeftDrive.spinFor(forward, distance, degrees, false);
+  backLeftDrive.spinFor(forward, distance, degrees, false);
 
-  frontRightDrive.spinFor(forward, distance, degrees, false);
-  middleRightDrive.spinFor(forward, distance, degrees, false);
-  backRightDrive.spinFor(forward, distance, degrees);
+  frontRightDrive.spinFor(reverse, distance, degrees, false);
+  middleRightDrive.spinFor(reverse, distance, degrees, false);
+  backRightDrive.spinFor(reverse, distance, degrees);
 
   frontLeftDrive.stop();
   middleLeftDrive.stop();
@@ -224,9 +223,31 @@ void driveReverse(int distance, int velocity, int timeout) {
 
   setTimeouts(timeout);
 
-  frontLeftDrive.spinFor(forward, distance, degrees, false);
-  middleLeftDrive.spinFor(forward, distance, degrees, false);
-  backLeftDrive.spinFor(forward, distance, degrees, false);
+  frontLeftDrive.spinFor(reverse, distance, degrees, false);
+  middleLeftDrive.spinFor(reverse, distance, degrees, false);
+  backLeftDrive.spinFor(reverse, distance, degrees, false);
+
+  frontRightDrive.spinFor(forward, distance, degrees, false);
+  middleRightDrive.spinFor(forward, distance, degrees, false);
+  backRightDrive.spinFor(forward, distance, degrees);
+
+  frontLeftDrive.stop();
+  middleLeftDrive.stop();
+  backLeftDrive.stop();
+  frontRightDrive.stop();
+  middleRightDrive.stop();
+  backRightDrive.stop();
+}
+
+void turnLeft(int distance, int velocity, int timeout) {
+  setLeftVel(velocity);
+  setRightVel(velocity);
+
+  setTimeouts(timeout);
+
+  frontLeftDrive.spinFor(reverse, distance, degrees, false);
+  middleLeftDrive.spinFor(reverse, distance, degrees, false);
+  backLeftDrive.spinFor(reverse, distance, degrees, false);
 
   frontRightDrive.spinFor(reverse, distance, degrees, false);
   middleRightDrive.spinFor(reverse, distance, degrees, false);
@@ -240,7 +261,7 @@ void driveReverse(int distance, int velocity, int timeout) {
   backRightDrive.stop();
 }
 
-void turnLeft(int distance, int velocity, int timeout) {
+void turnRight(int distance, int velocity, int timeout) {
   setLeftVel(velocity);
   setRightVel(velocity);
 
@@ -262,62 +283,32 @@ void turnLeft(int distance, int velocity, int timeout) {
   backRightDrive.stop();
 }
 
-void turnRight(int distance, int velocity, int timeout) {
-  setLeftVel(velocity);
-  setRightVel(velocity);
-
-  setTimeouts(timeout);
-
-  frontLeftDrive.spinFor(reverse, distance, degrees, false);
-  middleLeftDrive.spinFor(reverse, distance, degrees, false);
-  backLeftDrive.spinFor(reverse, distance, degrees, false);
-
-  frontRightDrive.spinFor(reverse, distance, degrees, false);
-  middleRightDrive.spinFor(reverse, distance, degrees, false);
-  backRightDrive.spinFor(reverse, distance, degrees);
-
-  frontLeftDrive.stop();
-  middleLeftDrive.stop();
-  backLeftDrive.stop();
-  frontRightDrive.stop();
-  middleRightDrive.stop();
-  backRightDrive.stop();
-}
-/**
 void wingsUp(bool left, bool right) {
-  rightWing.setTimeout(1, seconds);
+  leftWing.setTimeout(1, seconds);
   rightWing.setTimeout(1, seconds);
   rightWing.setVelocity(100, percent);
-  rightWing.setVelocity(100, percent);
+  leftWing.setVelocity(100, percent);
   if (right == true) {
     rightWing.spinFor(reverse, 180, degrees, true);
   }
   if (left == true) {
-    rightWing.spinFor(forward, 180, degrees, true);
+    leftWing.spinFor(forward, 180, degrees, true);
   }
+  leftWing.setStopping(hold);
   rightWing.setStopping(hold);
-  rightWing.setStopping(hold);
-  rightWing.stop();
+  leftWing.stop();
   rightWing.stop();
 }
 
-void wingsDown(bool left, bool right) {
-  rightWing.setTimeout(1, seconds);
-  rightWing.setTimeout(1, seconds);
-  rightWing.setVelocity(100, percent);
-  rightWing.setVelocity(100, percent);
-  if (right == true) {
-    rightWing.spinFor(forward, 180, degrees, false);
-  }
-  if (left == true) {
-    rightWing.spinFor(forward, 180, degrees, true);
-  }
-  rightWing.setStopping(hold);
-  rightWing.setStopping(hold);
-  rightWing.stop();
-  rightWing.stop();
+void leftWingDown(int t) {
+      leftWing.setMaxTorque(100, percent);
+      leftWing.setVelocity(100, percent);
+      leftWing.setTimeout(t, seconds);
+      leftWing.spinFor(reverse, 180, degrees, true);
+      leftWing.stop(hold);
+
+      
 }
-*/
 
 void pre_auton() {
   /**
@@ -338,23 +329,19 @@ void pre_auton() {
 
 void autonomous() {
   if(auton == "red1"){
-  driveForward(200, 50, 3);
-  turnLeft(460, 50, 5);
-  driveForward(1500, 50, 4);
-  intake.setVelocity(100, percent);
-  intake.spin(forward);
-  wait(1000, msec);
-  driveForward(1500, 50, 3);
-  driveReverse(150, 75, 1);
-  driveForward(250, 75, 1);
-  turnLeft(100, 50, 4);
-  driveReverse(300, 50, 3);
+  driveForward(200, 40, 3);
+  turnLeft(300, 30, 5);
+  driveForward(2000, 60, 4);
+  turnLeft(100, 40, 4);
+  driveReverse(300, 70, 3);
   turnLeft(130, 50, 4);
-  driveReverse(1700, 50, 4);
-  driveReverse(900, 25, 2);
-  turnRight(750, 50, 2);
-  driveForward(1150,50, 5);
-  intake.stop();
+  driveReverse(1400, 70, 3);
+  driveForward(100, 40, 1);
+  turnRight(40, 80, 1);
+  driveReverse(100, 80, 1);
+  turnRight(400, 80, 2);
+
+  driveForward(1200, 80, 5);
   }
 else if(auton == "red2"){
 
@@ -363,151 +350,126 @@ else if(auton == "red2"){
   driveForward(1500, 60,2);
   driveReverse(200, 100, 1);
   driveForward(300, 100, 1);
-  driveReverse(190, 40, 1);
-  turnRight(100, 40, 4
+  turnRight(100, 40, 4);
   driveReverse(300, 70, 3);
   turnRight(130, 50, 4);
-  driveReverse(2200, 70, 3);
+  driveReverse(1400, 70, 3);
   driveForward(890, 80, 5);
   turnLeft(390, 60, 2);
   driveForward(750, 80, 2); 
-  leftWing.set(true);
+  leftWingDown(1);
   driveForward(800, 70, 3);
 
 }
-
 } 
 
 void usercontrol() {
-  vex::pneumatics leftWing = vex::pneumatics(Brn.ThreeWirePort.A);
-  vex::pneumatics rightWing = vex::pneumatics(Brn.ThreeWirePort.B);
+
 
   intake.setVelocity(0, percent);
+  frontLeftDrive.spin(forward);
+  middleLeftDrive.spin(reverse);
+  backLeftDrive.spin(forward);
+  frontRightDrive.spin(reverse);
+  middleRightDrive.spin(forward);
+  backRightDrive.spin(reverse);
 
   while (true) {
-  if(invert == false){
-  frontLeftDrive.spin(reverse, Con.Axis3.position()*0.12, volt);
-  middleLeftDrive.spin(reverse, Con.Axis3.position()*0.12, volt);
-  backLeftDrive.spin(reverse, Con.Axis3.position()*0.12, volt);
-  frontRightDrive.spin(forward, Con.Axis2.position()*0.12, volt);
-  middleRightDrive.spin(forward, Con.Axis2.position()*0.12, volt);
-  backRightDrive.spin(forward, Con.Axis2.position()*0.12, volt);
 
-  }
-  else{
-  frontLeftDrive.spin(forward, Con.Axis3.position()*0.12, volt);
-  middleLeftDrive.spin(forward, Con.Axis3.position()*0.12, volt);
-  backLeftDrive.spin(forward, Con.Axis3.position()*0.12, volt);
-  frontRightDrive.spin(reverse, Con.Axis2.position()*0.12, volt);
-  middleRightDrive.spin(reverse, Con.Axis2.position()*0.12, volt);
-  backRightDrive.spin(reverse, Con.Axis2.position()*0.12, volt);
-  }
+//Brn.Screen.print();
 
-   if(Con.ButtonY.PRESSED){
+    leftDriveVel = Con.Axis3.position();
+    rightDriveVel = Con.Axis2.position();
 
-    if(launching == false){
+    if (Con.ButtonA.pressing()) {
+      if (!Con.ButtonL1.pressing()) {
+        upperspinnyThing.setVelocity(75, percent);
+        lowerSpinnyThing.setVelocity(70, percent);
+      }
+      if (Con.ButtonL1.pressing()) {
+        upperspinnyThing.setVelocity(65, percent);
+        lowerSpinnyThing.setVelocity(60, percent);
+      }
+     
 
-      launching = true;
-      launcher.setVelocity(66, percent);
-      launcher.spin(forward);
+      lowerSpinnyThing.spin(forward);
+      upperspinnyThing.spin(forward);
 
+    } else {
+      lowerSpinnyThing.setVelocity(0, percent);
+      upperspinnyThing.setVelocity(0, percent);
+      lowerSpinnyThing.setStopping(brake);
+      upperspinnyThing.setStopping(brake);
     }
-    else if(launching == true){
-
-      launching = false;
-      launcher.setStopping(brake);
-      launcher.stop();
-
-
-    }
-  
-
-   }
-   
-
-
-
-
-    if(Con.ButtonR2.PRESSED){
-
-      if(rightOut == false){
-
-        
-        rightOut = true;
-        rightWing.set(true);
-        
-        screen = "main";
-
-      }
-      else{
-        
-        rightOut = false;
-        rightWing.set(false);
- 
-
-
-
-      }
-
-    }
-    if(Con.ButtonL2.PRESSED){
-
-      if(leftOut == false){
-
-        leftOut = true;
-        leftWing.set(true);
-
-      }
-      else{
-
-        leftOut = false;
-        leftWing.set(false);
-
-
-      }
-
-    }
-
-     if(Con.ButtonR1.PRESSED){
-        
-        intake.setVelocity(100, percent);
-        intake.spin(reverse);
-
-      }
-
-       if(Con.ButtonL1.PRESSED){
+ if(Con.ButtonX.PRESSED){
         
         intake.setVelocity(100, percent);
         intake.spin(forward);
 
       }
 
-      if(Con.ButtonR1.RELEASED){
+       if(Con.ButtonB.PRESSED){
+        
+        intake.setVelocity(100, percent);
+        intake.spin(reverse);
+
+      }
+      if(Con.ButtonB.RELEASED){
+
         intake.setVelocity(0, percent);
 
       }
-      if(Con.ButtonL1.RELEASED){
+      if(Con.ButtonX.RELEASED){
 
         intake.setVelocity(0, percent);
 
       }
-    
-    if(Con.ButtonRight.pressing()){
+      
+    if (Con.ButtonR1.pressing()) {
+      frontLeftDrive.setVelocity(leftDriveVel * 0.45, percent);
+      frontRightDrive.setVelocity(rightDriveVel * -0.45, percent);
+      backLeftDrive.setVelocity(leftDriveVel * 0.45, percent);
+      backRightDrive.setVelocity(rightDriveVel * -0.45, percent);
+      middleLeftDrive.setVelocity(leftDriveVel * 0.45, percent);
+      middleRightDrive.setVelocity(rightDriveVel * -0.45, percent);
 
-      invert = true;
-
+    } else {
+      frontLeftDrive.setVelocity(leftDriveVel* 1, percent);
+      frontRightDrive.setVelocity(rightDriveVel* -1, percent);
+      middleLeftDrive.setVelocity(leftDriveVel* 1, percent);
+      middleRightDrive.setVelocity(rightDriveVel* -1, percent);
+      backLeftDrive.setVelocity(leftDriveVel* 1, percent);
+      backRightDrive.setVelocity(rightDriveVel* -1, percent);
     }
-    else{
 
-      invert = false;
+    if (Con.ButtonDown.PRESSED) {
+      claw.setMaxTorque(70, percent);
+      claw.setTimeout(1, seconds);
+      claw.spinFor(forward, 180, degrees, false);
 
+    } else {
+      if (clawvelABS <= 5 && claw.position(degrees) >= 90 &&
+          !Con.ButtonUp.pressing()) {
+        claw.stop(coast);
+      }
     }
-/**
+
+    if (Con.ButtonUp.PRESSED) {
+      claw.setMaxTorque(90, percent);
+      claw.setTimeout(1, seconds);
+      claw.spinFor(reverse, 180, degrees, false);
+
+    } else {
+      if (clawvelABS <= 5 && claw.position(degrees) <= 10 &&
+          !Con.ButtonDown.pressing()) {
+        claw.stop(coast);
+      }
+    }
+
     if (Con.ButtonR2.PRESSED) {
       rightWing.setMaxTorque(100, percent);
       rightWing.setVelocity(100, percent);
       if (rightWing.position(degrees) <= 45) {
-      
         rightWing.spinFor(forward, 180, degrees, false);
       }
       if (rightWing.position(degrees) > 45) {
@@ -520,21 +482,19 @@ void usercontrol() {
     }
 
     if (Con.ButtonL2.PRESSED) {
-      rightWing.setMaxTorque(100, percent);
-      rightWing.setVelocity(100, percent);
-      if (rightWing.position(degrees) <= -45) {
-        rightWing.spinFor(forward, 180, degrees, false);
+      leftWing.setMaxTorque(100, percent);
+      leftWing.setVelocity(100, percent);
+      if (leftWing.position(degrees) <= -45) {
+        leftWing.spinFor(forward, 180, degrees, false);
       }
-      if (rightWing.position(degrees) > -45) {
-        rightWing.spinFor(reverse, 180, degrees, false);
+      if (leftWing.position(degrees) > -45) {
+        leftWing.spinFor(reverse, 180, degrees, false);
       }
     }
 
     if (!Con.ButtonL2.pressing()) {
-      rightWing.stop(hold);
-    }
-    */
-  
+      leftWing.stop(hold);
+}
   }
 }
 
