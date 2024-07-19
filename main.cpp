@@ -2,132 +2,93 @@
 /*                                                                            */
 /*    Module:       main.cpp                                                  */
 /*    Author:       Student                                                   */
-/*    Created:      7/17/2024, 12:47:17 PM                                    */
+/*    Created:      7/18/2024, 9:59:02 AM                                     */
 /*    Description:  V5 project                                                */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
 
 #include "vex.h"
-#include "math.h"
-#include <string>
 
 using namespace vex;
 
 
 competition Competition;
-
 brain Brain;
 controller Controller;
 
-motor frontLeftDrive = motor(PORT1, ratio18_1);
-motor frontRightDrive = motor(PORT2, ratio18_1);
-bumper frontBumper = bumper(Brain.ThreeWirePort.C);
-
-int x = 0;
-
-void driveForwardIndef(){
-
-frontLeftDrive.spin(forward);
-frontRightDrive.spin(reverse);
-
-}
-void stopMotors(){
-
-frontRightDrive.stop();
-frontLeftDrive.stop();
-frontLeftDrive.setStopping(brake);
-frontRightDrive.setStopping(brake);
-
-}
-
-void turnRight(int dist){
-
-frontLeftDrive.spinFor(reverse, dist, degrees, false);
-frontRightDrive.spinFor(reverse, dist, degrees);
-
-}
-
-void turnLeft(int dist){
-
-frontLeftDrive.spinFor(forward, dist, degrees, false);
-frontRightDrive.spinFor(forward, dist, degrees);
-
-}
-
-void driveForward(int dist){
-
-frontLeftDrive.spinFor(forward, dist, degrees, false);
-frontRightDrive.spinFor(reverse, dist, degrees);
-
-}
-
-
-void driveReverse(int dist){
-
-frontLeftDrive.spinFor(reverse, dist, degrees, false);
-frontRightDrive.spinFor(forward, dist, degrees);
-
-}
-
-void whenBumperPressed(){
-
-  x++;
-  stopMotors();
-  wait(2, seconds);
-  driveReverse(75);
-  wait(1, seconds);
-  turnRight(192.5);
-  if(x<=2){
-  driveForwardIndef();
-  }
-  else if(x==3){
-
-    driveForward(250);
-turnRight(192.5);
-driveForward(120);
-turnLeft(192.5);
-driveForward(200);
-
-  }
-
-}
+motor leftHammer = motor(PORT4, ratio18_1);
+motor rightHammer = motor(PORT3, ratio18_1);
+motor leftDrive = motor(PORT1, ratio18_1);
+motor rightDrive = motor(PORT2, ratio18_1);
 
 void pre_auton(void) {
 
 
-
 }
-
 
 
 void autonomous(void) {
-frontLeftDrive.setVelocity(15, percent);
-frontRightDrive.setVelocity(15, percent);
-driveForwardIndef();  
-frontBumper.pressed(whenBumperPressed);
-
-while(true){
-
-
-Brain.Screen.print(x);
-wait(0.1, seconds);
-Brain.Screen.clearScreen();
-
-
 
 }
 
 
-
-}
 
 void usercontrol(void) {
+while(true){
 
-  
+leftDrive.spin(vex::directionType::fwd, (Controller.Axis3.value() + Controller.Axis1.value()*2), vex::velocityUnits::pct);
+rightDrive.spin(vex::directionType::rev, (Controller.Axis3.value()- Controller.Axis1.value()*2), vex::velocityUnits::pct);
 
+if(Controller.ButtonR1.pressing()){
+
+rightHammer.setVelocity(55, percent);
+rightHammer.setMaxTorque(65, percent);
+rightHammer.spin(reverse);
+
+
+}
+else if(Controller.ButtonR2.pressing()){
+
+  rightHammer.setVelocity(100, percent);
+  rightHammer.setMaxTorque(100, percent);
+  rightHammer.spin(forward);
+
+}
+else{
+
+rightHammer.stop();
+rightHammer.setStopping(brake);
+
+}
+
+if(Controller.ButtonL1.pressing()){
+
+leftHammer.setVelocity(55, percent);
+leftHammer.setMaxTorque(65, percent);
+leftHammer.spin(forward);
+
+
+}
+else if(Controller.ButtonL2.pressing()){
+
+  leftHammer.setVelocity(100, percent);
+  leftHammer.setMaxTorque(100, percent);
+  leftHammer.spin(reverse);
+
+}
+else{
+
+leftHammer.stop();
+leftHammer.setStopping(brake);
+
+}
+
+
+}
   while (1) {
 
     wait(20, msec); 
+
   }
 }
 
